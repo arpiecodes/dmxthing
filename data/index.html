@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DMX Controller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .color-picker {
+            width: 100%;
+            height: 50px;
+            margin-bottom: 10px;
+        }
+        .slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .button.stop {
+            background-color: #f44336;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+        }
+        .channel-group {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .channel-label {
+            width: 120px;
+            font-weight: bold;
+        }
+        .channel-value {
+            width: 50px;
+            text-align: right;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DMX Thing</h1>
+
+        <div class="control-group">
+            <h2>Manual Control</h2>
+            <div class="channel-group">
+                <span class="channel-label">Ch 1 (Dimmer):</span>
+                <input type="range" min="0" max="255" value="0" class="slider" id="ch1Slider">
+                <span class="channel-value" id="ch1Value">0</span>
+            </div>
+            <div class="channel-group">
+                <span class="channel-label">Ch 2 (Red):</span>
+                <input type="range" min="0" max="255" value="0" class="slider" id="ch2Slider">
+                <span class="channel-value" id="ch2Value">0</span>
+            </div>
+            <div class="channel-group">
+                <span class="channel-label">Ch 3 (Green):</span>
+                <input type="range" min="0" max="255" value="0" class="slider" id="ch3Slider">
+                <span class="channel-value" id="ch3Value">0</span>
+            </div>
+            <div class="channel-group">
+                <span class="channel-label">Ch 4 (Blue):</span>
+                <input type="range" min="0" max="255" value="0" class="slider" id="ch4Slider">
+                <span class="channel-value" id="ch4Value">0</span>
+            </div>
+            <div class="channel-group">
+                <span class="channel-label">Ch 5 (White):</span>
+                <input type="range" min="0" max="255" value="0" class="slider" id="ch5Slider">
+                <span class="channel-value" id="ch5Value">0</span>
+            </div>
+            <div class="channel-group">
+                <span class="channel-label">Ch 6 (Strobe):</span>
+                <input type="range" min="0" max="255" value="0" class="slider" id="ch6Slider">
+                <span class="channel-value" id="ch6Value">0</span>
+            </div>
+            <div class="channel-group">
+                <span class="channel-label">Ch 7 (Function):</span>
+                <input type="range" min="0" max="255" value="0" class="slider" id="ch7Slider">
+                <span class="channel-value" id="ch7Value">0</span>
+            </div>
+            <div class="channel-group">
+                <span class="channel-label">Ch 8 (Speed):</span>
+                <input type="range" min="0" max="255" value="0" class="slider" id="ch8Slider">
+                <span class="channel-value" id="ch8Value">0</span>
+            </div>
+            <div class="channel-group">
+                <span class="channel-label">Color picker:</span>
+                <input type="color" id="colorPicker" class="color-picker" value="#ff0000">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h2>Scenes</h2>
+            <div class="channel-group">
+                <span class="channel-label">Transition Speed (ms):</span>
+                <input type="range" min="10" max="1000" value="250" class="slider" id="sceneSpeedSlider">
+                <span class="channel-value" id="sceneSpeedValue">250</span>
+            </div>
+            <button class="button" id="rainbowButton">Rainbow</button>
+            <button class="button" id="chaseButton">Chase</button>
+            <button class="button stop" id="stopButton">Stop Scene</button>
+            <button class="button stop" id="resetButton">Reset All</button>
+        </div>
+        
+        <div class="control-group">
+            <h2>Settings</h2>
+            <div class="channel-group">
+                <span class="channel-label">Fixture Count:</span>
+                <button id="fixtureMinus">-</button>
+                <input type="number" id="fixtureCountInput" min="1" max="16" value="1" style="width:40px; text-align:center;">
+                <button id="fixturePlus">+</button>
+            </div>
+            <div class="channel-group">
+                <label for="artnetToggle"><b>Art-Net Passthrough</b></label>
+                <input type="checkbox" id="artnetToggle">
+                <span id="artnetModeLabel">Mode: Local</span>
+            </div>
+            <div class="channel-group">
+                <button id="saveSettingsBtn">Save Settings as Defaults</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h2>WiFi Configuration</h2>
+            <div class="channel-group">
+                <span class="channel-label">SSID:</span>
+                <input type="text" id="wifiSsid" style="width:200px;">
+            </div>
+            <div class="channel-group">
+                <span class="channel-label">Password:</span>
+                <input type="password" id="wifiPassword" style="width:200px;">
+            </div>
+            <button id="wifiSaveBtn">Save & Reboot</button>
+        </div>
+        
+        <div class="status" id="status">
+            Connecting...
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let reconnectTimeout;
+        const reconnectDelay = 2000;
+        let fixtureCount = 1;
+        let artnetPassthrough = false;
+        const artnetToggle = document.getElementById('artnetToggle');
+        const artnetModeLabel = document.getElementById('artnetModeLabel');
+
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            document.getElementById('status').textContent = 'Connecting';
+            document.getElementById('status').style.backgroundColor = '#fff';
+
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function() {
+                document.getElementById('status').textContent = 'Connected';
+                document.getElementById('status').style.backgroundColor = '#e8f5e9';
+                reconnectAttempts = 0;
+            };
+            
+            ws.onclose = function() {
+                document.getElementById('status').textContent = 'Disconnected';
+                document.getElementById('status').style.backgroundColor = '#ffebee';
+                
+                reconnectTimeout = setTimeout(connect, reconnectDelay);
+            };
+            
+            ws.onerror = function() {
+                document.getElementById('status').textContent = 'Error';
+                document.getElementById('status').style.backgroundColor = '#ffebee';
+                
+                reconnectTimeout = setTimeout(connect, reconnectDelay);
+            };
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateUI(data);
+            };
+        }
+
+        function updateUI(data) {
+            if (data.color) {
+                const color = data.color;
+                const hexColor = `#${color.r.toString(16).padStart(2, '0')}${color.g.toString(16).padStart(2, '0')}${color.b.toString(16).padStart(2, '0')}`;
+                document.getElementById('colorPicker').value = hexColor;
+                document.getElementById('ch2Slider').value = color.r;
+                document.getElementById('ch2Value').textContent = color.r;
+                document.getElementById('ch3Slider').value = color.g;
+                document.getElementById('ch3Value').textContent = color.g;
+                document.getElementById('ch4Slider').value = color.b;
+                document.getElementById('ch4Value').textContent = color.b;
+            }
+            
+            if (data.dimmer !== undefined) {
+                document.getElementById('ch1Slider').value = data.dimmer;
+                document.getElementById('ch1Value').textContent = data.dimmer;
+            }
+            
+            if (data.white !== undefined) {
+                document.getElementById('ch5Slider').value = data.white;
+                document.getElementById('ch5Value').textContent = data.white;
+            }
+            
+            if (data.strobe !== undefined) {
+                document.getElementById('ch6Slider').value = data.strobe;
+                document.getElementById('ch6Value').textContent = data.strobe;
+            }
+            
+            if (data.function !== undefined) {
+                document.getElementById('ch7Slider').value = data.function;
+                document.getElementById('ch7Value').textContent = data.function;
+            }
+            
+            if (data.speed !== undefined) {
+                document.getElementById('ch8Slider').value = data.speed;
+                document.getElementById('ch8Value').textContent = data.speed;
+            }
+            
+            if (data.fixtureCount !== undefined) {
+                updateFixtureCountUI(data.fixtureCount);
+            }
+            
+            if (data.artnetPassthrough !== undefined) {
+                artnetPassthrough = data.artnetPassthrough;
+                artnetToggle.checked = artnetPassthrough;
+                artnetModeLabel.textContent = artnetPassthrough ? 'Mode: Art-Net' : 'Mode: Local';
+            }
+        }
+
+        function sendCommand(command) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(command));
+            }
+        }
+
+        function updateFixtureCountUI(count) {
+            fixtureCount = count;
+            document.getElementById('fixtureCountInput').value = count;
+        }
+
+        document.getElementById('fixtureMinus').addEventListener('click', function() {
+            let val = parseInt(document.getElementById('fixtureCountInput').value);
+            if (val > 1) {
+                val--;
+                updateFixtureCountUI(val);
+                sendCommand({ fixtureCount: val });
+            }
+        });
+        document.getElementById('fixturePlus').addEventListener('click', function() {
+            let val = parseInt(document.getElementById('fixtureCountInput').value);
+            if (val < 16) {
+                val++;
+                updateFixtureCountUI(val);
+                sendCommand({ fixtureCount: val });
+            }
+        });
+        document.getElementById('fixtureCountInput').addEventListener('change', function(e) {
+            let val = parseInt(e.target.value);
+            if (val >= 1 && val <= 16) {
+                updateFixtureCountUI(val);
+                sendCommand({ fixtureCount: val });
+            } else {
+                updateFixtureCountUI(fixtureCount);
+            }
+        });
+
+        // Color picker
+        document.getElementById('colorPicker').addEventListener('input', function(e) {
+            const hex = e.target.value;
+            const r = parseInt(hex.substr(1, 2), 16);
+            const g = parseInt(hex.substr(3, 2), 16);
+            const b = parseInt(hex.substr(5, 2), 16);
+            sendCommand({ color: { r, g, b } });
+        });
+
+        // Add debounce utility
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Replace slider event handlers with debounced versions
+        const debouncedDimmer = debounce(function(value) {
+            sendCommand({ dimmer: value });
+        }, 250);
+
+        const debouncedColor = debounce(function(r, g, b) {
+            sendCommand({ color: { r, g, b } });
+        }, 250);
+
+        document.getElementById('ch1Slider').addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            document.getElementById('ch1Value').textContent = value;
+            debouncedDimmer(value);
+        });
+
+        document.getElementById('ch2Slider').addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            document.getElementById('ch2Value').textContent = value;
+            const g = parseInt(document.getElementById('ch3Slider').value);
+            const b = parseInt(document.getElementById('ch4Slider').value);
+            debouncedColor(value, g, b);
+        });
+
+        document.getElementById('ch3Slider').addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            document.getElementById('ch3Value').textContent = value;
+            const r = parseInt(document.getElementById('ch2Slider').value);
+            const b = parseInt(document.getElementById('ch4Slider').value);
+            debouncedColor(r, value, b);
+        });
+
+        document.getElementById('ch4Slider').addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            document.getElementById('ch4Value').textContent = value;
+            const r = parseInt(document.getElementById('ch2Slider').value);
+            const g = parseInt(document.getElementById('ch3Slider').value);
+            debouncedColor(r, g, value);
+        });
+
+        const debouncedWhite = debounce(function(value) { sendCommand({ white: value }); }, 250);
+        document.getElementById('ch5Slider').addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            document.getElementById('ch5Value').textContent = value;
+            debouncedWhite(value);
+        });
+
+        const debouncedStrobe = debounce(function(value) { sendCommand({ strobe: value }); }, 250);
+        document.getElementById('ch6Slider').addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            document.getElementById('ch6Value').textContent = value;
+            debouncedStrobe(value);
+        });
+
+        const debouncedFunction = debounce(function(value) { sendCommand({ function: value }); }, 250);
+        document.getElementById('ch7Slider').addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            document.getElementById('ch7Value').textContent = value;
+            debouncedFunction(value);
+        });
+
+        const debouncedSpeed = debounce(function(value) { sendCommand({ speed: value }); }, 250);
+        document.getElementById('ch8Slider').addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            document.getElementById('ch8Value').textContent = value;
+            debouncedSpeed(value);
+        });
+
+        const debouncedSceneSpeed = debounce(function(value) { sendCommand({ transitionSpeed: value }); }, 250);
+        document.getElementById('sceneSpeedSlider').addEventListener('input', function(e) {
+            const value = parseInt(e.target.value);
+            document.getElementById('sceneSpeedValue').textContent = value;
+            debouncedSceneSpeed(value);
+        });
+
+        // Scene buttons
+        document.getElementById('rainbowButton').addEventListener('click', function() {
+            const transitionSpeed = parseInt(document.getElementById('sceneSpeedSlider').value);
+            sendCommand({ scene: 1 });
+        });
+
+        document.getElementById('chaseButton').addEventListener('click', function() {
+            const transitionSpeed = parseInt(document.getElementById('sceneSpeedSlider').value);
+            sendCommand({ scene: 2 });
+        });
+
+        document.getElementById('stopButton').addEventListener('click', function() {
+            sendCommand({ stop: true });
+        });
+
+        document.getElementById('resetButton').addEventListener('click', function() {
+            sendCommand({ reset: true });
+        });
+
+        // Add event listener for Save Settings button
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        saveSettingsBtn.addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ saveSettings: true }));
+            }
+        });
+
+        // Connect on page load
+        connect();
+
+        artnetToggle.addEventListener('change', function() {
+            artnetPassthrough = artnetToggle.checked;
+            artnetModeLabel.textContent = artnetPassthrough ? 'Mode: Art-Net' : 'Mode: Local';
+            sendCommand({ artnetPassthrough });
+        });
+
+        document.getElementById('wifiSaveBtn').addEventListener('click', function() {
+            const ssid = document.getElementById('wifiSsid').value;
+            const password = document.getElementById('wifiPassword').value;
+            sendCommand({ wifiConfig: { ssid, password } });
+        });
+    </script>
+</body>
+</html> 
