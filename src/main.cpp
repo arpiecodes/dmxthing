@@ -7,7 +7,7 @@
 #include <Preferences.h>
 #include <WiFiUdp.h>
 
-// WiFi credentials
+// WiFi credentials in AP Mode (fallback if no other WiFi is available)
 const char* ssid = "DMXController";
 const char* password = "dmx12345";
 
@@ -20,16 +20,11 @@ void updateScene();
 void hsvToRgb(float h, float s, float v, float& r, float& g, float& b);
 void setColor(uint8_t r, uint8_t g, uint8_t b, int fixture = 0);
 void setDimmer(uint8_t value, int fixture = 0);
-void setStrobe(uint8_t value, int fixture = 0);
-void setWhite(uint8_t value, int fixture = 0);
-void setFunction(uint8_t value, int fixture = 0);
-void setSpeed(uint8_t value, int fixture = 0);
 void notifyClients();
 void updateDMX();
 void startTransition(int fixture);
 void updateTransition();
 void setChannelValue(int channel, uint8_t value, int fixture = 0);
-void updateChannelStates();
 void setRedManual();
 void setGreenManual();
 void setBlueManual();
@@ -43,8 +38,7 @@ void setBlueManual();
 dmx_port_t dmxPort = 1;
 #define DMX_PACKET_SIZE 512
 
-// Move these to the top, before channelStates
-#define MAX_FIXTURES 16
+#define MAX_FIXTURES 64
 #define MAX_DMX_CHANNELS 512
 
 // Channel definitions (fixed mapping)
@@ -107,11 +101,6 @@ Button buttons[] = {
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-// DMX values
-uint8_t dmxValues[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-uint8_t targetValues[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-float masterDimmer = 1.0;
-
 // Scene variables
 bool isRunningScene = false;
 int currentScene = 0;
@@ -166,9 +155,6 @@ const int ARTNET_PORT = 6454;
 bool artnetPassthrough = false;
 unsigned long lastArtnetPacket = 0;
 uint8_t artnetBuffer[530]; // Enough for Art-Net DMX packet
-
-char wifiSsid[33] = "DMXController";
-char wifiPassword[65] = "dmx12345";
 
 void resetAll() {
     // Stop any running scene
@@ -333,15 +319,12 @@ void setup() {
     String savedSsid = prefs.getString("wifiSsid", "DMXController");
     String savedPassword = prefs.getString("wifiPassword", "dmx12345");
     artnetPassthrough = prefs.getUInt("artnet", 0) == 1;
-    
-    savedSsid.toCharArray(wifiSsid, sizeof(wifiSsid));
-    savedPassword.toCharArray(wifiPassword, sizeof(wifiPassword));
 
     WiFi.mode(WIFI_STA);
-    WiFi.begin(wifiSsid, wifiPassword);
+    WiFi.begin(savedSsid.c_str(), savedPassword.c_str());
 
     M5.Display.println("Connecting to WiFi");
-    M5.Display.println(wifiSsid);
+    M5.Display.println(savedSsid.c_str());
     unsigned long wifiStart = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - wifiStart < 50000) {
         delay(250);
@@ -780,17 +763,6 @@ void setChannelValue(int channel, uint8_t value, int fixture) {
     }
 }
 
-void updateChannelStates() {
-    for (int f = 0; f < fixtureCount; ++f) {
-        for (int i = 0; i < 8; i++) {
-            if (channelStates[f * 8 + i].needsUpdate) {
-                channelStates[f * 8 + i].currentValue = channelStates[f * 8 + i].targetValue;
-                channelStates[f * 8 + i].needsUpdate = false;
-            }
-        }
-    }
-}
-
 void setColor(uint8_t r, uint8_t g, uint8_t b, int fixture) {
     setChannelValue(CHANNEL_RED, r, fixture);
     setChannelValue(CHANNEL_GREEN, g, fixture);
@@ -798,11 +770,6 @@ void setColor(uint8_t r, uint8_t g, uint8_t b, int fixture) {
 }
 
 void setDimmer(uint8_t value, int fixture) { setChannelValue(CHANNEL_DIMMER, value, fixture); }
-void setStrobe(uint8_t value, int fixture) { setChannelValue(CHANNEL_STROBE, value, fixture); }
-void setWhite(uint8_t value, int fixture) { setChannelValue(CHANNEL_WHITE, value, fixture); }
-void setFunction(uint8_t value, int fixture) { setChannelValue(CHANNEL_FUNCTION, value, fixture); }
-void setSpeed(uint8_t value, int fixture) { setChannelValue(CHANNEL_SPEED, value, fixture); }
-
 void setRedManual() { for (int f = 0; f < fixtureCount; ++f) setColor(255, 0, 0, f); manualOverride = true; drawButtons(); notifyClients(); }
 void setGreenManual() { for (int f = 0; f < fixtureCount; ++f) setColor(0, 255, 0, f); manualOverride = true; drawButtons(); notifyClients(); }
 void setBlueManual() { for (int f = 0; f < fixtureCount; ++f) setColor(0, 0, 255, f); manualOverride = true; drawButtons(); notifyClients(); } 
