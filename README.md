@@ -6,9 +6,9 @@ This is the result of an evening of fun with AI (aka vibe coding). It's purpose 
 
 *NOTE: This is definitely not meant for anything in production, I'm just sharing this outcome for fun!*
 
-![DMXThing](https://github.com/arpiecodes/dmxthing/raw/main/images/dmx-thing.jpeg)
+![DMXThing](https://github.com/arpiecodes/dmxthing/raw/main/images/dmx-thing.png)
 
-![WebInterface](https://github.com/arpiecodes/dmxthing/raw/main/images/web-interface.jpeg)
+![WebInterface](https://github.com/arpiecodes/dmxthing/raw/main/images/web-interface.png)
 
 ## Features
 
